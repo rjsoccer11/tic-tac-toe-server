@@ -36,10 +36,10 @@ io.on('connection', socket => {
   });
 
   socket.on('restart', () => {
-    board = Array(9).fill(null);
-    currentPlayer = 'X';
-    io.emit('update', { board, currentPlayer });
-  });
+  board = Array(9).fill(null);
+  currentPlayer = 'X';
+  io.emit('restartGame', { board, currentPlayer });
+});
 });
 
 
