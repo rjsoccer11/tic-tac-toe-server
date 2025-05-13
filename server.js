@@ -24,24 +24,37 @@ io.on('connection', socket => {
     socket.emit('roomList', openRooms);
   });
 
-  socket.on('joinRoom', roomName => {
-  if (!rooms[roomName]) {
-    rooms[roomName] = [];
-  }
+  socket.on('joinRoom', room => {
+    if (!rooms[room]) {
+      rooms[room] = {
+        players: [],
+        usernames: {},
+        board: Array(9).fill(null),
+        currentPlayer: 'X'
+      };
+    }
 
-  if (rooms[roomName].length >= 2) {
-    socket.emit('roomFull');
-    return;
-  }
+    const game = rooms[room];
+    if (game.players.length >= 2) {
+      socket.emit('roomFull');
+      return;
+    }
 
-  rooms[roomName].push(socket.id);
-  socket.join(roomName);
-  socket.room = roomName;
+    socket.join(room);
+    game.players.push(socket.id);
+    game.usernames[socket.id] = socket.username;
 
-  // Notify player joined
-  const players = rooms[roomName].map(id => users[id]);
-  io.to(roomName).emit('playerList', players);
-});
+    const symbol = game.players.length === 1 ? 'X' : 'O';
+    socket.emit('playerInfo', { symbol, room, username: socket.username });
+
+    if (game.players.length === 2) {
+      io.to(room).emit('startGame', {
+        board: game.board,
+        currentPlayer: game.currentPlayer,
+        usernames: game.usernames
+      });
+    }
+  });
 
   socket.on('move', ({ room, index, symbol }) => {
     const game = rooms[room];
@@ -75,18 +88,18 @@ io.on('connection', socket => {
   });
 
   socket.on('disconnect', () => {
-  const roomName = socket.room;
-  if (roomName && rooms[roomName]) {
-    rooms[roomName] = rooms[roomName].filter(id => id !== socket.id);
-    if (rooms[roomName].length === 0) {
-      delete rooms[roomName]; // Clean up
-    } else {
-      const players = rooms[roomName].map(id => users[id]);
-      io.to(roomName).emit('playerList', players);
+    for (const room in rooms) {
+      const game = rooms[room];
+      const index = game.players.indexOf(socket.id);
+      if (index !== -1) {
+        game.players.splice(index, 1);
+        delete game.usernames[socket.id];
+        io.to(room).emit('playerLeft');
+        if (game.players.length === 0) delete rooms[room];
+        break;
+      }
     }
-  }
-
-  delete users[socket.id];
+  });
 });
 
 function checkWinner(board) {
