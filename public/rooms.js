@@ -6,7 +6,6 @@ if (!username) {
   alert('No username found. Redirecting...');
   window.location.href = '/index.html';
 } else {
-  // Re-send username on every new socket connection
   socket.emit('createUsername', username);
 }
 
