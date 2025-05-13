@@ -100,6 +100,20 @@ socket.on('reset', () => {
   restartBtn.style.display = 'none';
 });
 
+socket.on('restartGame', ({ board: newBoard, currentPlayer: newTurn }) => {
+  board = newBoard;
+  currentTurn = newTurn;
+  gameEnded = false;
+  restartBtn.style.display = 'none';
+  statusEl.textContent = currentTurn === playerSymbol ? 'Your turn' : "Opponent's turn";
+
+  const cells = document.querySelectorAll('.cell');
+  cells.forEach((cell, index) => {
+    cell.textContent = '';
+    cell.classList.remove('taken');
+  });
+});
+
 // Handle restart
 restartBtn.addEventListener('click', () => {
   socket.emit('restart');
