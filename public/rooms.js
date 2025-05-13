@@ -1,9 +1,19 @@
 const socket = io();
 const roomList = document.getElementById('roomList');
+const username = localStorage.getItem('username');
+
+// Send username again to the server
+if (username) {
+  socket.emit('createUsername', username);
+} else {
+  alert('No username found, redirecting...');
+  window.location.href = '/index.html';
+}
 
 function refreshRooms() {
   socket.emit('getRooms');
 }
+
 document.getElementById('createRoom').onclick = () => {
   const room = document.getElementById('newRoom').value.trim();
   if (room) {
