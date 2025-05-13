@@ -2,12 +2,12 @@ const socket = io();
 const roomList = document.getElementById('roomList');
 const username = localStorage.getItem('username');
 
-// Send username again to the server
-if (username) {
-  socket.emit('createUsername', username);
-} else {
-  alert('No username found, redirecting...');
+if (!username) {
+  alert('No username found. Redirecting...');
   window.location.href = '/index.html';
+} else {
+  // Re-send username on every new socket connection
+  socket.emit('createUsername', username);
 }
 
 function refreshRooms() {
@@ -24,6 +24,9 @@ document.getElementById('createRoom').onclick = () => {
 
 socket.on('roomList', rooms => {
   roomList.innerHTML = '';
+  if (rooms.length === 0) {
+    roomList.innerHTML = '<li>No rooms available</li>';
+  }
   rooms.forEach(room => {
     const li = document.createElement('li');
     li.textContent = room;
