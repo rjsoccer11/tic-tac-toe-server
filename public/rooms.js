@@ -17,9 +17,7 @@ document.getElementById('createRoom').onclick = () => {
   const room = document.getElementById('newRoom').value.trim();
   if (room) {
     socket.emit('joinRoom', room);
-    socket.once('playerList', () => {
-  window.location.href = '/game.html?room=' + room;
-});
+    window.location.href = '/game.html?room=' + room;
   }
 };
 
