@@ -1,6 +1,7 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
+const path = require('path');
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
@@ -10,9 +11,19 @@ app.use(express.static('public'));
 const rooms = {}; // { roomId: { players: [socket.id], board, currentPlayer, usernames } }
 
 io.on('connection', socket => {
-  console.log('New user connected');
+  console.log('User connected:', socket.id);
 
-  socket.on('joinRoom', ({ username, room }) => {
+  socket.on('createUsername', username => {
+    socket.username = username;
+    socket.emit('usernameCreated');
+  });
+
+  socket.on('getRooms', () => {
+    const openRooms = Object.keys(rooms).filter(roomId => rooms[roomId].players.length < 2);
+    socket.emit('roomList', openRooms);
+  });
+
+  socket.on('joinRoom', room => {
     if (!rooms[room]) {
       rooms[room] = {
         players: [],
@@ -22,25 +33,24 @@ io.on('connection', socket => {
       };
     }
 
-    const roomData = rooms[room];
-
-    if (roomData.players.length >= 2) {
+    const game = rooms[room];
+    if (game.players.length >= 2) {
       socket.emit('roomFull');
       return;
     }
 
     socket.join(room);
-    roomData.players.push(socket.id);
-    roomData.usernames[socket.id] = username;
+    game.players.push(socket.id);
+    game.usernames[socket.id] = socket.username;
 
-    const symbol = roomData.players.length === 1 ? 'X' : 'O';
-    socket.emit('playerInfo', { symbol, room, username });
+    const symbol = game.players.length === 1 ? 'X' : 'O';
+    socket.emit('playerInfo', { symbol, room, username: socket.username });
 
-    if (roomData.players.length === 2) {
+    if (game.players.length === 2) {
       io.to(room).emit('startGame', {
-        board: roomData.board,
-        currentPlayer: roomData.currentPlayer,
-        usernames: roomData.usernames
+        board: game.board,
+        currentPlayer: game.currentPlayer,
+        usernames: game.usernames
       });
     }
   });
