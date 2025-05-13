@@ -20,6 +20,7 @@ document.getElementById('joinBtn').onclick = () => {
     return;
   }
 
+  document.getElementById('joinBtn').disabled = true; // 🔒 Disable after first click
   socket.emit('joinRoom', { username, room });
 };
 
@@ -30,6 +31,7 @@ socket.on('playerInfo', ({ symbol, room: r }) => {
 
 socket.on('roomFull', () => {
   joinError.textContent = 'Room is full!';
+  document.getElementById('joinBtn').disabled = false; // 🔓 Enable if join failed
 });
 
 socket.on('startGame', ({ board, currentPlayer, usernames }) => {
@@ -70,6 +72,9 @@ socket.on('playerLeft', () => {
 });
 
 restartBtn.onclick = () => {
+  gameEnded = false; // ✅ Allow moves again
+  restartBtn.style.display = 'none';
+  statusEl.textContent = playerSymbol === 'X' ? 'Your turn' : "Opponent's turn";
   socket.emit('restartGame', room);
 };
 
