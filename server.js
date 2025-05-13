@@ -5,7 +5,6 @@ const path = require('path');
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
-const rooms = {};
 
 app.use(express.static('public'));
 
